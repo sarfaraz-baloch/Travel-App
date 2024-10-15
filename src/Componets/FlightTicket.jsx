@@ -29,7 +29,7 @@ const FlightTicket = () => {
   }, []);
 
   if (!booking) {
-    return <Typography>{<CircularProgress /> }</Typography>; // Optional loading state
+    return <Typography>Loading booking data...</Typography>; // Optional loading state
   }
 
   // Destructure booking data
