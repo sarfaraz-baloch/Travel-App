@@ -1,36 +1,69 @@
-import React from 'react';
-import { Card, CardContent, Typography, Box, Grid, Button, Divider } from '@mui/material';
+import React, { useEffect, useState } from 'react';
+import { Card, CardContent, Typography, Box, Grid, Button, Divider, Avatar } from '@mui/material';
+import { doc, getDoc } from 'firebase/firestore';
+import { getAuth } from 'firebase/auth';
+import { db } from '../Firebase/Firebase'; // Adjust the path as necessary
+import HeaderImage from './HeaderImage';
 
-const FlightTicket = ({ flight }) => {
-   
-    
-    
+const FlightTicket = () => {
+  const [booking, setBooking] = useState(null);
+  const isActive = (path) => location.pathname === path;
+  useEffect(() => {
+    const fetchBookingData = async () => {
+      const auth = getAuth();
+      const currentUser = auth.currentUser;
+
+      if (currentUser) {
+        const bookingRef = doc(db, 'users', currentUser.uid); // Ensure you're accessing the correct document
+        const bookingSnapshot = await getDoc(bookingRef);
+
+        if (bookingSnapshot.exists()) {
+          setBooking(bookingSnapshot.data());
+        } else {
+          console.log('No booking data found for this user.');
+        }
+      }
+    };
+
+    fetchBookingData();
+  }, []);
+
+  if (!booking) {
+    return <Typography>{<CircularProgress /> }</Typography>; // Optional loading state
+  }
+
+  // Destructure booking data
   const {
-    airline = 'Unknown Airline',
-    airlineLogo = '',
-    departureTime = '00:00',
-    departureAirport = 'Unknown Airport',
-    arrivalTime = '00:00',
-    arrivalAirport = 'Unknown Airport',
-    duration = 'Unknown Duration',
-    flightNumber = 'N/A',
-    date = 'N/A',
-    price = 'N/A'
-  } = flight || {};
+    email = 'Unknown Email',
+    name = 'Unknown Name',
+    bookingDetails = {} // Ensure this is defined
+  } = booking;
 
-  // Format the price if available
-  const formattedPrice = price !== 'N/A'
-    ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(price)
-    : 'Price Not Available';
+  // Destructure from bookingDetails
+  const {
+    date = 'N/A',
+    destination = 'N/A',
+    category = 'N/A',
+    persons = 'N/A',
+    specialRequest = 'N/A',
+    image = '' // Assuming you want to show this as well
+  } = bookingDetails;
+
+//   console.log(bookingDetails.name);
 
   return (
+    <>
+    {isActive("/") ? "" : <HeaderImage />}
     <Card 
-      sx={{ 
+      sx={{
+        // fontFamily: 'Roboto, sans-serif',
+        // bgcolor: 'background.paper', 
         maxWidth: '100%', 
         borderRadius: '16px', 
         boxShadow: 3, 
         overflow: 'hidden',
-        border: '1px solid #ddd'
+        border: '1px solid #ddd',
+        color: '#333',
       }}
     >
       <CardContent 
@@ -49,54 +82,41 @@ const FlightTicket = ({ flight }) => {
             paddingRight: { xs: 0, md: '24px' } 
           }}
         >
-          {/* Airline Name and Logo */}
-          <Box 
-            display="flex" 
-            justifyContent="space-between" 
-            alignItems="center" 
-            mb={2}
-          >
-            <Typography variant="h6" fontWeight="bold">
-              {airline}
-            </Typography>
-            {airlineLogo && <img src={airlineLogo} alt={airline} style={{ height: '40px' }} />}
-          </Box>
+          {/* User Information */}
+          <Typography  variant="h6" fontWeight="bold" fontSize="18px" fontFamily="fantasy">{bookingDetails.name}</Typography>
+          <Typography variant="body2" color="text.secondary">{email}</Typography>
 
-          <Divider sx={{ mb: 2 }} />
+          <Divider sx={{ my: 2 }} />
 
           {/* Flight Information */}
           <Grid container spacing={2}>
             <Grid item xs={6}>
-              <Typography variant="subtitle2" color="text.secondary">Departure</Typography>
-              <Typography variant="h6">{departureTime}</Typography>
-              <Typography variant="body2" color="text.secondary">{departureAirport}</Typography>
-            </Grid>
-            <Grid item xs={6}>
-              <Typography variant="subtitle2" color="text.secondary">Arrival</Typography>
-              <Typography variant="h6">{arrivalTime}</Typography>
-              <Typography variant="body2" color="text.secondary">{arrivalAirport}</Typography>
-            </Grid>
-          </Grid>
-
-          <Box mt={3}>
-            <Typography variant="subtitle2" color="text.secondary">Duration</Typography>
-            <Typography variant="h6">{duration}</Typography>
-          </Box>
-
-          {/* Flight Number & Date */}
-          <Grid container spacing={2} mt={3}>
-            <Grid item xs={6}>
-              <Typography variant="subtitle2" color="text.secondary">Flight Number</Typography>
-              <Typography variant="h6">{flightNumber}</Typography>
-            </Grid>
-            <Grid item xs={6}>
               <Typography variant="subtitle2" color="text.secondary">Date</Typography>
-              <Typography variant="h6">{date}</Typography>
+              <Typography fontWeight="bold" fontSize="18px" fontFamily="fantasy" variant="h6">{date}</Typography>
+            </Grid> 
+            <Grid item xs={6}>
+              <Typography variant="subtitle2" color="text.secondary">Destination</Typography>
+              <Typography fontWeight="bold" fontSize="18px" fontFamily="fantasy" variant="h6">{destination}</Typography>
+            </Grid>
+            <Grid item xs={6}>
+              <Typography variant="subtitle2" color="text.secondary">Category</Typography>
+              <Typography fontWeight="bold" fontSize="18px" fontFamily="fantasy" variant="h6">{category}</Typography>
+            </Grid>
+            <Grid item xs={6}>
+              <Typography variant="subtitle2" color="text.secondary">Persons</Typography>
+              <Typography fontWeight="bold" fontSize="18px" fontFamily="fantasy" variant="h6">{persons}</Typography>
+            </Grid>
+            <Grid item xs={12}>
+              <Typography variant="subtitle2" color="text.secondary">Special Request</Typography>
+              <Typography fontWeight="bold" fontSize="18px" fontFamily="fantasy" variant="h6">{specialRequest}</Typography>
             </Grid>
           </Grid>
+
+          {/* Displaying the image if available */}
+          
         </Box>
 
-        {/* Right Section - Pricing and Barcode */}
+        {/* Right Section - Pricing (if you have pricing info) */}
         <Box 
           sx={{ 
             width: { xs: '100%', md: '35%' }, 
@@ -105,10 +125,11 @@ const FlightTicket = ({ flight }) => {
             paddingLeft: { xs: 0, md: '24px' }
           }}
         >
-          {/* Price */}
-          <Typography variant="h5" fontWeight="bold" color="primary" mb={2}>
+          {/* Price (if you have price info in booking) */}
+          {/* Adjust this part according to where the price data is located */}
+          {/* <Typography variant="h5" fontWeight="bold" color="primary" mb={2}>
             {formattedPrice}
-          </Typography>
+          </Typography> */}
           
           {/* Book Button */}
           <Button variant="contained" color="primary" fullWidth sx={{ mb: 2 }}>
@@ -116,20 +137,10 @@ const FlightTicket = ({ flight }) => {
           </Button>
 
           <Divider sx={{ mb: 2 }} />
-
-          {/* Barcode Placeholder */}
-          <Box 
-            sx={{ 
-              background: 'linear-gradient(45deg, #333, #fff)', 
-              height: '60px', 
-              width: '100%', 
-              borderRadius: '4px'
-            }} 
-            aria-label="Barcode"
-          />
         </Box>
       </CardContent>
     </Card>
+    </>
   );
 };
 

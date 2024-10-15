@@ -7,8 +7,11 @@ import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
 import { useSelector } from "react-redux";
 import { getAuth } from "firebase/auth";
-import { toast } from "react-toastify";
-
+// import { toast } from "react-toastify";
+import { toast } from "react-hot-toast";
+import CircularProgress from "@mui/material/CircularProgress";
+import { Button } from "@mui/material";
+import { useState } from "react";
 // Yup validation schema
 const BookingSchema = Yup.object().shape({
   name: Yup.string().required("Name is required"),
@@ -24,6 +27,7 @@ const BookingSchema = Yup.object().shape({
 });
 
 const Booking = () => {
+  const [loading, setLoading] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const user = useSelector((state) => state.persistedReducer.onAuth.user);
@@ -44,7 +48,7 @@ const Booking = () => {
 
   const handleSubmit = async (values, { resetForm }) => {
     if (!isLoggedIn) {
-      alert("Please log in to submit your booking.");
+      toast.error("Please log in to submit your booking.");
       navigate("/login");
       return;
     }
@@ -57,22 +61,45 @@ const Booking = () => {
       const bookingSnapshot = await getDoc(bookingRef);
 
       if (bookingSnapshot.exists()) {
-        alert("You have already made a booking. You cannot book again.");
-        return;
+        const bookingData = bookingSnapshot.data();
+        const lastBooking = bookingData.lastBookingTimestamp;
+
+        // Check if the last booking was within the last 24 hours
+        if (lastBooking) {
+          const currentTime = new Date();
+          const lastBookingTime = lastBooking.toDate(); // Convert Firestore Timestamp to JS Date
+          const timeDifference =
+            (currentTime - lastBookingTime) / (1000 * 60 * 60); // Convert to hours
+          console.log("timeDifference==>", timeDifference);
+          if (timeDifference < 24) {
+            toast.error("You can only book 1 package every 24 hours.");
+            return;
+          }
+        }
       }
 
       try {
-        await setDoc(bookingRef, {
-          ...values,
-          uid: currentUser.uid,
-        });
+        // Proceed with the booking since no booking was made in the last 24 hours
+        const newBooking = {
+          bookingDetails: {
+            name: values.name,
+            email: values.email,
+            date: values.date,
+            destination: values.destination,
+            persons: values.persons,
+            category: values.category,
+            specialRequest: values.specialRequest,
+          },
+          lastBookingTimestamp: new Date(), // Save the current timestamp
+        };
 
-        // alert("Booking submitted successfully!");
+        // Save the booking as a nested field without overwriting the whole document
+        await setDoc(bookingRef, { ...newBooking }, { merge: true });
+
         toast.success("Booking submitted successfully!");
         resetForm();
       } catch (e) {
-        // console.error("Error adding booking: ", e);
-        // alert("There was an error submitting your booking.");
+        console.error("Error adding booking: ", e);
         toast.error("There was an error submitting your booking.");
       }
     }
@@ -92,11 +119,28 @@ const Booking = () => {
           <div className="flex flex-col lg:flex-row items-center">
             <div className="w-full lg:w-1/2 mb-8 lg:mb-0">
               <h5 className="text-yellow-400 text-lg font-semibold">Booking</h5>
-              <h1 className="text-white text-4xl font-bold mb-4">Online Booking</h1>
-              <p className="text-white mb-4">Book your adventure trip today!</p>
+              <h1 className="text-white text-4xl font-bold mb-4">
+                Online Booking
+              </h1>
+              <p className="text-white mb-4 text-sm leading-relaxed font-roboto font-bold">
+                Book your adventure trip today!
+                {/* <br /> */}
+                Welcome to our travel application, where we strive to make your
+                journey as seamless as possible! Our online booking feature is
+                designed with user convenience in mind, allowing you to secure
+                your travel arrangements effortlessly from the comfort of your
+                home or on the go. With just a few clicks, you can explore a
+                wide array of travel packages tailored to meet your needs.
+                Whether you're planning a solo adventure, a family getaway, or a
+                romantic escape, our platform provides detailed information
+                about each package, including destinations, pricing, and
+                available dates.
+              </p>
             </div>
             <div className="w-full lg:w-1/2">
-              <h1 className="text-white text-3xl font-bold mb-3">Book A Tour Deal</h1>
+              <h1 className="text-white text-3xl font-bold mb-3">
+                Book A Tour Deal
+              </h1>
 
               <Formik
                 initialValues={initialValues}
@@ -113,7 +157,11 @@ const Booking = () => {
                           className="form-input w-full bg-white border-0 rounded-md p-2 shadow-sm"
                           placeholder="Your Name"
                         />
-                        <ErrorMessage name="name" component="div" className="text-red-500 text-sm" />
+                        <ErrorMessage
+                          name="name"
+                          component="div"
+                          className="text-red-500 text-sm"
+                        />
                       </div>
                       <div>
                         <Field
@@ -122,7 +170,11 @@ const Booking = () => {
                           className="form-input w-full bg-white border-0 rounded-md p-2 shadow-sm"
                           placeholder="Your Email"
                         />
-                        <ErrorMessage name="email" component="div" className="text-red-500 text-sm" />
+                        <ErrorMessage
+                          name="email"
+                          component="div"
+                          className="text-red-500 text-sm"
+                        />
                       </div>
                       <div>
                         <Field
@@ -131,7 +183,11 @@ const Booking = () => {
                           className="form-input w-full bg-white border-0 rounded-md p-2 shadow-sm"
                           placeholder="Date & Time"
                         />
-                        <ErrorMessage name="date" component="div" className="text-red-500 text-sm" />
+                        <ErrorMessage
+                          name="date"
+                          component="div"
+                          className="text-red-500 text-sm"
+                        />
                       </div>
                       <div>
                         <Field
@@ -143,7 +199,11 @@ const Booking = () => {
                           <option value="Destination 2">Destination 2</option>
                           <option value="Destination 3">Destination 3</option>
                         </Field>
-                        <ErrorMessage name="destination" component="div" className="text-red-500 text-sm" />
+                        <ErrorMessage
+                          name="destination"
+                          component="div"
+                          className="text-red-500 text-sm"
+                        />
                       </div>
                       <div>
                         <Field
@@ -155,7 +215,11 @@ const Booking = () => {
                           <option value="2 Persons">2 Persons</option>
                           <option value="3 Persons">3 Persons</option>
                         </Field>
-                        <ErrorMessage name="persons" component="div" className="text-red-500 text-sm" />
+                        <ErrorMessage
+                          name="persons"
+                          component="div"
+                          className="text-red-500 text-sm"
+                        />
                       </div>
                       <div>
                         <Field
@@ -167,7 +231,11 @@ const Booking = () => {
                           <option value="Kids">Kids</option>
                           <option value="Seniors">Seniors</option>
                         </Field>
-                        <ErrorMessage name="category" component="div" className="text-red-500 text-sm" />
+                        <ErrorMessage
+                          name="category"
+                          component="div"
+                          className="text-red-500 text-sm"
+                        />
                       </div>
                       {/* New Flight Number Field */}
                       <div>
@@ -177,7 +245,11 @@ const Booking = () => {
                           className="form-input w-full bg-white border-0 rounded-md p-2 shadow-sm"
                           placeholder="Flight Number"
                         />
-                        <ErrorMessage name="flightNumber" component="div" className="text-red-500 text-sm" />
+                        <ErrorMessage
+                          name="flightNumber"
+                          component="div"
+                          className="text-red-500 text-sm"
+                        />
                       </div>
                       {/* New Class Type Field */}
                       <div>
@@ -190,7 +262,11 @@ const Booking = () => {
                           <option value="Business">Business</option>
                           <option value="First Class">First Class</option>
                         </Field>
-                        <ErrorMessage name="classType" component="div" className="text-red-500 text-sm" />
+                        <ErrorMessage
+                          name="classType"
+                          component="div"
+                          className="text-red-500 text-sm"
+                        />
                       </div>
                       {/* New Seat Preference Field */}
                       <div className="col-span-2">
@@ -200,7 +276,11 @@ const Booking = () => {
                           className="form-input w-full bg-white border-0 rounded-md p-2 shadow-sm"
                           placeholder="Seat Preference (e.g., Window, Aisle)"
                         />
-                        <ErrorMessage name="seatPreference" component="div" className="text-red-500 text-sm" />
+                        <ErrorMessage
+                          name="seatPreference"
+                          component="div"
+                          className="text-red-500 text-sm"
+                        />
                       </div>
                       <div className="col-span-2">
                         <Field
@@ -210,15 +290,29 @@ const Booking = () => {
                           rows="3"
                           placeholder="Special Request"
                         />
-                        <ErrorMessage name="specialRequest" component="div" className="text-red-500 text-sm" />
+                        <ErrorMessage
+                          name="specialRequest"
+                          component="div"
+                          className="text-red-500 text-sm"
+                        />
                       </div>
                       <div className="col-span-2">
-                        <button
+                        <Button
+                          loading={loading}
+                          // disabled={loading}
                           type="submit"
+                          sx={{
+                            backgroundColor: "#13357B",
+                            color: "white",
+                            ":hover": {
+                              backgroundColor: "white",
+                              color: "#13357B",
+                            },
+                          }}
                           className="w-full py-3 bg-primary text-white font-semibold rounded-md shadow-lg transition duration-300 hover:bg-white hover:text-primary hover:border hover:border-primary"
                         >
-                          Book Now
-                        </button>
+                          {loading ? <CircularProgress size={24} /> : "Submit"}
+                        </Button>
                       </div>
                     </div>
                   </Form>

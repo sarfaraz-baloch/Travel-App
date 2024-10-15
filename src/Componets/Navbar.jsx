@@ -59,7 +59,6 @@ const Navbar = () => {
     // setAnchorElUser(null);
     signOut(auth)
       .then(() => {
-        
         // Sign-out successful.
       })
       .catch((error) => {
@@ -245,14 +244,22 @@ const Navbar = () => {
                 >
                   Testimonial
                 </Link>
+
+                {/* /flight-ticket */}
+                <Link
+                  to="/flight-ticket"
+                  className="dropdown-item block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-blue-500"
+                >
+                  Flight Ticket
+                </Link>
+
+                {/*  */}
               </div>
             </div>
 
             {/* Dropdown end */}
 
-            {isLogin ? (
-              null
-            ) : (
+            {isLogin ? null : (
               <Link
                 to="/login"
                 className={`nav-item px-4  py-5 afont-semibold text-xl  rounded-s-full  transition-all duration-300 ${
@@ -266,7 +273,6 @@ const Navbar = () => {
                 Login
               </Link>
             )}
-            
 
             {isLogin ? (
               <button
@@ -456,14 +462,19 @@ const Navbar = () => {
                 >
                   Testimonial
                 </Link>
+
+                <Link
+                  to="/flight-ticket"
+                  className="dropdown-item block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-blue-500"
+                >
+                  Flight Ticket
+                </Link>
               </div>
             </div>
 
             {/* Dropdown end */}
 
-            {isLogin ? (
-              null
-            ) : (
+            {isLogin ? null : (
               <Link
                 to="/login"
                 className={`nav-item px-4  py-5 afont-semibold text-xl  rounded-s-full  transition-all duration-300 ${
@@ -477,7 +488,6 @@ const Navbar = () => {
                 Login
               </Link>
             )}
-            
 
             {isLogin ? (
               <button
